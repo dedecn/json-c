@@ -6,26 +6,81 @@ project(json-c)
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4100 /wd4996 /wd4244 /wd4706 /wd4702 /wd4127 /wd4701")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4100 /wd4996 /wd4244 /wd4706 /wd4702 /wd4127 /wd4701")
-  file(COPY ./config.h.win32 DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/)
-  file(RENAME ${CMAKE_CURRENT_BINARY_DIR}/include/config.h.win32 ${CMAKE_CURRENT_BINARY_DIR}/include/config.h)
-  file(COPY ./json_config.h.win32 DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/)
-  file(RENAME ${CMAKE_CURRENT_BINARY_DIR}/include/json_config.h.win32 ${CMAKE_CURRENT_BINARY_DIR}/include/json_config.h)
 elseif(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-  execute_process(COMMAND echo ${CMAKE_CURRENT_SOURCE_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-  execute_process(COMMAND sh autogen.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-  execute_process(COMMAND ./configure WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-  file(COPY ./config.h DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/)
-  file(COPY ./json_config.h DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/)
 endif()
+
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
+# perform platform checks
+# For more information on performing checks see: https://cmake.org/Wiki/CMake:How_To_Write_Platform_Checks
+INCLUDE (CheckIncludeFiles)
+INCLUDE (CheckFunctionExists)
+INCLUDE (CheckLibraryExists)
+INCLUDE (CheckSymbolExists)
+INCLUDE (CheckTypeSize)
+
+CHECK_INCLUDE_FILES (dlfcn.h HAVE_DLFCN_H)
+CHECK_INCLUDE_FILES (endian.h HAVE_ENDIAN_H)
+CHECK_INCLUDE_FILES (fcntl.h HAVE_FCNTL_H)
+CHECK_INCLUDE_FILES (inttypes.h HAVE_INTTYPES_H)
+CHECK_INCLUDE_FILES (inttypes.h JSON_C_HAVE_INTTYPES_H)
+CHECK_INCLUDE_FILES (limits.h HAVE_LIMITS_H)
+CHECK_INCLUDE_FILES (locale.h HAVE_LOCALE_H)
+CHECK_INCLUDE_FILES (memory.h HAVE_MEMORY_H)
+CHECK_INCLUDE_FILES (stdarg.h HAVE_STDARG_H)
+CHECK_INCLUDE_FILES (stdint.h HAVE_STDINT_H)
+CHECK_INCLUDE_FILES (stdlib.h HAVE_STDLIB_H)
+CHECK_INCLUDE_FILES (strings.h HAVE_STRINGS_H)
+CHECK_INCLUDE_FILES (string.h HAVE_STRING_H)
+CHECK_INCLUDE_FILES (syslog.h HAVE_SYSLOG_H)
+CHECK_INCLUDE_FILES (sys/cdefs.h HAVE_SYS_CDEFS_H)
+CHECK_INCLUDE_FILES (sys/param.h HAVE_SYS_PARAM_H)
+CHECK_INCLUDE_FILES (sys/stat.h HAVE_SYS_STAT_H)
+CHECK_INCLUDE_FILES (sys/types.h HAVE_SYS_TYPES_H)
+CHECK_INCLUDE_FILES (unistd.h HAVE_UNISTD_H)
+
+
+CHECK_FUNCTION_EXISTS(malloc HAVE_MALLOC)
+CHECK_FUNCTION_EXISTS(realloc HAVE_REALLOC)
+CHECK_FUNCTION_EXISTS(open HAVE_OPEN)
+CHECK_FUNCTION_EXISTS(_doprnt HAVE_DOPRNT)
+
+CHECK_SYMBOL_EXISTS(isnan "math.h" HAVE_DECL_ISNAN)
+CHECK_SYMBOL_EXISTS(NAN "math.h" HAVE_DECL_NAN)
+CHECK_SYMBOL_EXISTS(_isnan "float.h" HAVE_DECL__ISNAN)
+CHECK_SYMBOL_EXISTS(_finite "float.h" HAVE_DECL__FINITE)
+CHECK_SYMBOL_EXISTS(isinf "math.h" HAVE_DECL_ISINF)
+CHECK_SYMBOL_EXISTS(INFINITY "math.h" HAVE_DECL_INFINITY)
+
+CHECK_TYPE_SIZE("int" SIZEOF_INT)
+
+CHECK_SYMBOL_EXISTS(strdup "string.h" HAVE_STRDUP)
+CHECK_SYMBOL_EXISTS(strncasecmp "string.h" HAVE_STRNCASECMP)
+CHECK_SYMBOL_EXISTS(strcasecmp "string.h" HAVE_STRCASECMP)
+CHECK_LIBRARY_EXISTS(c strerror "string.h" HAVE_STRERROR)
+
+CHECK_LIBRARY_EXISTS(c realloc "stdlib.h" HAVE_REALLOC)
+CHECK_LIBRARY_EXISTS(c malloc "stdlib.h" HAVE_MALLOC)
+CHECK_LIBRARY_EXISTS(c setlocale "locale.h" HAVE_SETLOCALE)
+CHECK_SYMBOL_EXISTS(snprintf "stdio.h" HAVE_SNPRINTF)
+CHECK_SYMBOL_EXISTS(vprintf "stdarg.h" HAVE_VPRINTF)
+CHECK_SYMBOL_EXISTS(vsnprintf "stdio.h" HAVE_VSNPRINTF)
+CHECK_SYMBOL_EXISTS(vasprintf "stdio.h" HAVE_VASPRINTF)
+CHECK_LIBRARY_EXISTS(c vsyslog "stdarg.h" HAVE_VSYSLOG)
+
+
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/config.h)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/json_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/json_config.h)
+
+
+
 set(JSON_C_HEADERS
     ./json.h
+    ${CMAKE_CURRENT_BINARY_DIR}/include/json_config.h
     ${CMAKE_CURRENT_BINARY_DIR}/include/config.h
-    ./json_config.h
     ./arraylist.h
     ./debug.h
     ./json_inttypes.h
@@ -54,18 +109,36 @@ set(JSON_C_SOURCES
     ./random_seed.c
 )
 
-add_library(json-c
-    ${JSON_C_SOURCES}
-    ${JSON_C_HEADERS}
+add_library(json-c-objlib OBJECT
+  ${JSON_C_SOURCES}
+  ${JSON_C_HEADERS}
 )
 
-set_property(TARGET json-c PROPERTY C_STANDARD 99)
+# shared libraries need PIC
+set_property(TARGET json-c-objlib PROPERTY POSITION_INDEPENDENT_CODE 1)
+set_property(TARGET json-c-objlib PROPERTY C_STANDARD 99)
 
-install(TARGETS json-c
+add_library(json-c-static STATIC $<TARGET_OBJECTS:json-c-objlib>)
+add_library(json-c-shared SHARED $<TARGET_OBJECTS:json-c-objlib>)
+
+SET_TARGET_PROPERTIES(json-c-static PROPERTIES OUTPUT_NAME json-c CLEAN_DIRECT_OUTPUT 1)
+SET_TARGET_PROPERTIES(json-c-shared PROPERTIES OUTPUT_NAME json-c CLEAN_DIRECT_OUTPUT 1)
+
+# attach version number to SO shared file
+set(MYLIB_VERSION_MAJOR 0)
+set(MYLIB_VERSION_MINOR 12)
+set(MYLIB_VERSION_PATCH 99)
+set(MYLIB_VERSION_STRING ${MYLIB_VERSION_MAJOR}.${MYLIB_VERSION_MINOR}.${MYLIB_VERSION_PATCH})
+set_target_properties(json-c-shared PROPERTIES VERSION ${MYLIB_VERSION_STRING}
+                                           SOVERSION ${MYLIB_VERSION_MAJOR})
+
+# installation locations
+install(TARGETS json-c-static json-c-shared
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
 
-install(DIRECTORY . DESTINATION ${CMAKE_INSTALL_PREFIX}/include/json-c FILES_MATCHING PATTERN "*.h")
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/json-c FILES_MATCHING PATTERN "*.h")
+#install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/json-c FILES_MATCHING PATTERN "*.h")
+#install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/json-c FILES_MATCHING PATTERN "*.h")
+install(FILES ${JSON_C_HEADERS} DESTINATION include/json-c )
