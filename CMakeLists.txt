@@ -11,7 +11,7 @@ elseif(UNIX)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 endif()
 
-
+add_definitions(-D_GNU_SOURCE)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 # perform platform checks
@@ -43,8 +43,8 @@ CHECK_INCLUDE_FILES (sys/types.h HAVE_SYS_TYPES_H)
 CHECK_INCLUDE_FILES (unistd.h HAVE_UNISTD_H)
 
 
-CHECK_FUNCTION_EXISTS(malloc HAVE_MALLOC)
-CHECK_FUNCTION_EXISTS(realloc HAVE_REALLOC)
+CHECK_SYMBOL_EXISTS(malloc "stdlib.h;memory.h" HAVE_MALLOC)
+CHECK_SYMBOL_EXISTS(realloc "stdlib.h;memory.h" HAVE_REALLOC)
 CHECK_FUNCTION_EXISTS(open HAVE_OPEN)
 CHECK_FUNCTION_EXISTS(_doprnt HAVE_DOPRNT)
 
@@ -66,9 +66,9 @@ CHECK_LIBRARY_EXISTS(c realloc "stdlib.h" HAVE_REALLOC)
 CHECK_LIBRARY_EXISTS(c malloc "stdlib.h" HAVE_MALLOC)
 CHECK_LIBRARY_EXISTS(c setlocale "locale.h" HAVE_SETLOCALE)
 CHECK_SYMBOL_EXISTS(snprintf "stdio.h" HAVE_SNPRINTF)
-CHECK_SYMBOL_EXISTS(vprintf "stdarg.h" HAVE_VPRINTF)
+CHECK_SYMBOL_EXISTS(vprintf "stdio.h;stdarg.h" HAVE_VPRINTF)
 CHECK_SYMBOL_EXISTS(vsnprintf "stdio.h" HAVE_VSNPRINTF)
-CHECK_SYMBOL_EXISTS(vasprintf "stdio.h" HAVE_VASPRINTF)
+CHECK_LIBRARY_EXISTS(c vasprintf "stdlib.h;stdio.h" HAVE_VASPRINTF)
 CHECK_LIBRARY_EXISTS(c vsyslog "stdarg.h" HAVE_VSYSLOG)
 
 
@@ -79,6 +79,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/json_config.h.in ${CMAKE_CURREN
 
 set(JSON_C_HEADERS
     ./json.h
+    ./json_c_version.h
     ${CMAKE_CURRENT_BINARY_DIR}/include/json_config.h
     ${CMAKE_CURRENT_BINARY_DIR}/include/config.h
     ./arraylist.h
@@ -86,6 +87,7 @@ set(JSON_C_HEADERS
     ./json_inttypes.h
     ./json_object.h
     ./json_object_private.h
+    ./json_object_iterator.h
     ./json_pointer.h
     ./json_tokener.h
     ./json_util.h
