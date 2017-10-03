@@ -450,14 +450,55 @@ static unsigned long lh_perllike_str_hash(const void *k)
     return hashval;
 }
 
-static unsigned long lh_char_hash(const void *k)
-{
+#if defined(__linux__)
+
+#ifdef __cplusplus
+#define INITIALIZER(f) \
+        static void f(void); \
+        struct f##_t_ { f##_t_(void) { f(); } }; static f##_t_ f##_; \
+        static void f(void)
+#elif defined(_MSC_VER)
+#pragma section(".CRT$XCU",read)
+#define INITIALIZER2_(f,p) \
+        static void f(void); \
+        __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+        __pragma(comment(linker,"/include:" p #f "_")) \
+        static void f(void)
+#ifdef _WIN64
+#define INITIALIZER(f) INITIALIZER2_(f,"")
+#else
+#define INITIALIZER(f) INITIALIZER2_(f,"_")
+#endif
+#else
+#define INITIALIZER(f) \
+        static void f(void) __attribute__((constructor)); \
+        static void f(void)
+#endif
+
+#include <time.h>
+
 #if defined _MSC_VER
 #define RANDOM_SEED_TYPE LONG
 #else
 #define RANDOM_SEED_TYPE int
 #endif
-	static volatile RANDOM_SEED_TYPE random_seed = -1;
+static volatile RANDOM_SEED_TYPE random_seed = -1;
+
+INITIALIZER(init_hash_random_seed) {
+	if (random_seed == -1) {
+		RANDOM_SEED_TYPE seed;
+		/* we can't use -1 as it is the unitialized sentinel */
+		//while ((random_seed = json_c_get_random_seed()) == -1);
+		srand(time(NULL));
+		random_seed = rand();
+	}
+}
+
+#endif // defined __linux__
+
+
+static unsigned long lh_char_hash(const void *k)
+{
 
 	if (random_seed == -1) {
 		RANDOM_SEED_TYPE seed;
