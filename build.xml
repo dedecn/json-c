@@ -1,0 +1,27 @@
+
+<project name="json-c" default="jarall" basedir=".">
+    <description>Json-C build wrapper around cmake</description>
+    
+    <target name="clean">
+        <echo message="Cleaning files" />
+         <delete includeEmptyDirs="true" failonerror="false">
+             <fileset dir="build"/>
+         </delete>
+     </target>
+
+     <target name="cmake" depends="clean">
+        <mkdir dir="build" />
+         <exec executable="${tools.basedir}/3rdparty/cmake/bin/cmake" dir="build" failonerror="true">
+               <arg value=".." />
+        </exec>
+    </target>
+
+    <target name="compile" depends="cmake" >
+        <exec executable="make" dir="build" failonerror="true">
+        </exec>        
+    </target>
+
+    <target name="jarall" depends="compile">
+        <echo message="*** will commit output library files to DevTools/IneoQuest after testing ***" />
+    </target>
+</project>
