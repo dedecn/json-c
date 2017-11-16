@@ -9,7 +9,7 @@
          </delete>
      </target>
 
-     <target name="cmake" depends="clean">
+     <target name="cmake">
         <mkdir dir="build" />
          <exec executable="${tools.basedir}/3rdparty/cmake/bin/cmake" dir="build" failonerror="true">
                <arg value=".." />
@@ -21,7 +21,7 @@
         </exec>        
     </target>
 
-    <target name="jarall" depends="compile">
+    <target name="jarall" depends="clean,compile">
         <echo message="*** will commit output library files to DevTools/IneoQuest after testing ***" />
     </target>
 </project>
