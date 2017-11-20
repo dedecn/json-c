@@ -27,16 +27,18 @@
      </target>
      <target name="prepare.if.unix" if="isUnix">
         <property name="cmake-generator" value="Unix Makefiles" />
+        <echo message="preparing for unix builds using Makefiles" />
      </target>
      <target name="prepare.if.windows" if="isWindows">
         <property name="cmake-generator" value="Visual Studio 12 2013 Win64" />
+        <echo message="preparing for Windows builds using Visual Studio (msbuild), make sure you are using the Visual Studio 2013 Command Shell to build." />
      </target>
 
 
-     <target name="cmake">
+     <target name="cmake" depends="prepare">
          <exec executable="cmake" dir="build" failonerror="true">
                <arg value="-G" />
-               <arg value="Visual Studio 12 2013 Win64" />
+               <arg value="${cmake-generator}" />
                <arg value="-DCMAKE_BUILD_TYPE=${config}" />
                <arg value=".." />
         </exec>
