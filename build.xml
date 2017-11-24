@@ -3,6 +3,7 @@
     <description>Json-C build wrapper around cmake</description>
 
     <property name="config" value="Debug" />
+    <property name="cmake" value="cmake" />
 
    
     <condition property="isWindows">
@@ -36,7 +37,7 @@
 
 
      <target name="cmake" depends="prepare">
-         <exec executable="cmake" dir="build" failonerror="true">
+         <exec executable="${cmake}" dir="build" failonerror="true">
                <arg value="-G" />
                <arg value="${cmake-generator}" />
                <arg value="-DCMAKE_BUILD_TYPE=${config}" />
