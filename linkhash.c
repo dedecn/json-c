@@ -450,7 +450,6 @@ static unsigned long lh_perllike_str_hash(const void *k)
     return hashval;
 }
 
-#if defined(__linux__)
 
 #ifdef __cplusplus
 #define INITIALIZER(f) \
@@ -494,7 +493,6 @@ INITIALIZER(init_hash_random_seed) {
 	}
 }
 
-#endif // defined __linux__
 
 
 static unsigned long lh_char_hash(const void *k)
