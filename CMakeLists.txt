@@ -76,28 +76,39 @@ CHECK_LIBRARY_EXISTS(c vsyslog "stdarg.h" HAVE_VSYSLOG)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/config.h)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/json_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/json_config.h)
 
+# This function takes at least 2 arguments and prepends (path) to each entry from 2-N
+# It can be used to convert a list of relative file paths into absolute ones
+FUNCTION(PREPEND var prefix)
+   SET(listVar "")
+   FOREACH(f ${ARGN})
+      LIST(APPEND listVar "${prefix}/${f}")
+   ENDFOREACH(f)
+   SET(${var} "${listVar}" PARENT_SCOPE)
+ENDFUNCTION(PREPEND)
 
 
 set(JSON_C_HEADERS
-    ./json.h
-    ./json_c_version.h
+    json.h
+    json_c_version.h
+    arraylist.h
+    debug.h
+    json_inttypes.h
+    json_object.h
+    json_object_private.h
+    json_object_iterator.h
+    json_pointer.h
+    json_tokener.h
+    json_util.h
+    linkhash.h
+    math_compat.h
+    strdup_compat.h
+    vasprintf_compat.h
+    printbuf.h
+    random_seed.h
+)
+set(JSON_C_GENERATED_HEADERS
     ${CMAKE_CURRENT_BINARY_DIR}/include/json_config.h
     ${CMAKE_CURRENT_BINARY_DIR}/include/config.h
-    ./arraylist.h
-    ./debug.h
-    ./json_inttypes.h
-    ./json_object.h
-    ./json_object_private.h
-    ./json_object_iterator.h
-    ./json_pointer.h
-    ./json_tokener.h
-    ./json_util.h
-    ./linkhash.h
-    ./math_compat.h
-    ./strdup_compat.h
-    ./vasprintf_compat.h
-    ./printbuf.h
-    ./random_seed.h
 )
 
 set(JSON_C_SOURCES
@@ -112,9 +123,14 @@ set(JSON_C_SOURCES
     ./random_seed.c
 )
 
+# we will need absolute paths to each header for some commands
+PREPEND(JSON_C_HEADERS_ABSPATH ${CMAKE_CURRENT_SOURCE_DIR} ${JSON_C_HEADERS})
+
+
 add_library(json-c-objlib OBJECT
   ${JSON_C_SOURCES}
   ${JSON_C_HEADERS}
+  ${JSON_C_GENERATED_HEADERS}
 )
 
 # shared libraries need PIC
@@ -135,6 +151,13 @@ set(MYLIB_VERSION_STRING ${MYLIB_VERSION_MAJOR}.${MYLIB_VERSION_MINOR}.${MYLIB_V
 set_target_properties(json-c-shared PROPERTIES VERSION ${MYLIB_VERSION_STRING}
                                            SOVERSION ${MYLIB_VERSION_MAJOR})
 
+
+# copy required json assets to output directory
+add_custom_command(TARGET json-c-shared POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${JSON_C_HEADERS_ABSPATH} ${CMAKE_CURRENT_BINARY_DIR}/include
+        )
+
 # installation locations
 install(TARGETS json-c-static json-c-shared
     RUNTIME DESTINATION bin
@@ -144,5 +167,5 @@ install(TARGETS json-c-static json-c-shared
 
 #install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/json-c FILES_MATCHING PATTERN "*.h")
 #install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/json-c FILES_MATCHING PATTERN "*.h")
-install(FILES ${JSON_C_HEADERS} DESTINATION include/json-c )
+install(FILES ${JSON_C_HEADERS} ${JSON_C_GENERATED_HEADERS} DESTINATION include/json-c )
 

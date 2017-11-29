@@ -1,0 +1,68 @@
+
+<project name="json-c" default="jarall" basedir=".">
+    <description>Json-C build wrapper around cmake</description>
+
+    <property name="config" value="Debug" />
+    <property name="cmake" value="cmake" />
+    <property name="build.dir" value="build-${config}-${os.arch}" />
+
+   
+    <condition property="isWindows">
+                    <os family="windows" />
+    </condition>
+    <condition property="isUnix">
+                    <os family="unix" />
+    </condition>
+
+
+ 
+    <target name="clean">
+        <echo message="Cleaning files" />
+         <delete includeEmptyDirs="true" failonerror="false">
+             <fileset dir="${build.dir}"/>
+         </delete>
+     </target>
+
+
+     <target name="prepare" depends="prepare.if.unix, prepare.if.windows">
+        <mkdir dir="${build.dir}" />
+     </target>
+     <target name="prepare.if.unix" if="isUnix">
+        <property name="cmake-generator" value="Unix Makefiles" />
+        <echo message="preparing for unix builds using Makefiles" />
+     </target>
+     <target name="prepare.if.windows" if="isWindows">
+        <condition property="cmake-generator" value="Visual Studio 12 2013" else="Visual Studio 12 2013 Win64">
+            <equals arg1="${os.arch}" arg2="x86" />
+        </condition>
+        <echo message="Using cmake generator ${cmake-generator} on ${os.arch}" />
+        <echo message="preparing for Windows builds using Visual Studio (msbuild), make sure you are using the Visual Studio 2013 Command Shell to build." />
+     </target>
+
+
+     <target name="cmake" depends="prepare">
+         <exec executable="${cmake}" dir="${build.dir}" failonerror="true">
+               <arg value="-G" />
+               <arg value="${cmake-generator}" />
+               <arg value="-DCMAKE_BUILD_TYPE=${config}" />
+               <arg value=".." />
+        </exec>
+    </target>
+
+
+    <target name="compile" depends="compile.if.unix, compile.if.windows" />
+    <target name="compile.if.unix" depends="cmake" if="isUnix" >
+        <exec executable="make" dir="${build.dir}" failonerror="true" />
+    </target>
+    <target name="compile.if.windows" depends="cmake" if="isWindows" >
+        <exec executable="msbuild" dir="${build.dir}" failonerror="true">
+               <arg value="json-c.sln" />
+               <arg value="/p:Configuration=${config}" />
+        </exec>
+    </target>
+
+
+    <target name="jarall" depends="clean,compile">
+        <echo message="*** will commit output library files to DevTools/IneoQuest after testing ***" />
+    </target>
+</project>
