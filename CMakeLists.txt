@@ -69,7 +69,7 @@ CHECK_LIBRARY_EXISTS(c setlocale "locale.h" HAVE_SETLOCALE)
 CHECK_SYMBOL_EXISTS(snprintf "stdio.h" HAVE_SNPRINTF)
 CHECK_SYMBOL_EXISTS(vprintf "stdio.h;stdarg.h" HAVE_VPRINTF)
 CHECK_SYMBOL_EXISTS(vsnprintf "stdio.h" HAVE_VSNPRINTF)
-CHECK_LIBRARY_EXISTS(c vasprintf "stdlib.h;stdio.h" HAVE_VASPRINTF)
+CHECK_SYMBOL_EXISTS(vasprintf "stdlib.h;stdio.h" HAVE_VASPRINTF)
 CHECK_LIBRARY_EXISTS(c vsyslog "stdarg.h" HAVE_VSYSLOG)
 
 
@@ -145,3 +145,4 @@ install(TARGETS json-c-static json-c-shared
 #install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/json-c FILES_MATCHING PATTERN "*.h")
 #install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/json-c FILES_MATCHING PATTERN "*.h")
 install(FILES ${JSON_C_HEADERS} DESTINATION include/json-c )
+
