@@ -70,7 +70,12 @@ CHECK_SYMBOL_EXISTS(snprintf "stdio.h" HAVE_SNPRINTF)
 CHECK_SYMBOL_EXISTS(vprintf "stdio.h;stdarg.h" HAVE_VPRINTF)
 CHECK_SYMBOL_EXISTS(vsnprintf "stdio.h" HAVE_VSNPRINTF)
 CHECK_SYMBOL_EXISTS(vasprintf "stdlib.h;stdio.h" HAVE_VASPRINTF)
+CHECK_LIBRARY_EXISTS(c vasprintf "stdlib.h;stdio.h" HAVE_VASPRINTF2)
 CHECK_LIBRARY_EXISTS(c vsyslog "stdarg.h" HAVE_VSYSLOG)
+
+if(HAVE_VASPRINTF2)
+	set(HAVE_VASPRINTF TRUE)
+endif()
 
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/config.h)
