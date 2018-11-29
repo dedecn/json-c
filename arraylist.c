@@ -22,6 +22,7 @@
 # include <strings.h>
 #endif /* HAVE_STRINGS_H */
 
+#if !defined(SIZE_T_MAX)
 #if SIZEOF_SIZE_T == SIZEOF_INT
 #define SIZE_T_MAX UINT_MAX
 #elif SIZEOF_SIZE_T == SIZEOF_LONG
@@ -31,6 +32,7 @@
 #else
 #error Unable to determine size of size_t
 #endif
+#endif // !defined(SIZE_T_MAX)
 
 #include "arraylist.h"
 
